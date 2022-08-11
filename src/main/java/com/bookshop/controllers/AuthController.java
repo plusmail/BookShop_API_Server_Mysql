@@ -13,6 +13,9 @@ import com.bookshop.services.MailService;
 import com.bookshop.services.MyUserDetailsService;
 import com.bookshop.services.UserService;
 import com.bookshop.utils.JwtUtil;
+import com.bookshop.utils.RequestTest202008;
+import io.jsonwebtoken.ExpiredJwtException;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,13 +30,17 @@ import org.thymeleaf.spring5.SpringTemplateEngine;
 
 import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @RestController
 @RequestMapping("/api/auth")
+@Log4j2
 public class AuthController extends BaseController<Object> {
     @Autowired
     private JwtUtil jwtUtil;
@@ -87,6 +94,7 @@ public class AuthController extends BaseController<Object> {
     public ResponseEntity<?> validateToken(@RequestBody AuthenticationResponse authenticationResponse) {
         try {
             String jwt = authenticationResponse.getJwt();
+            System.out.println("jwt:" + jwt);
             String username = jwtUtil.extractUsername(jwt);
             UserDetails userDetails = myUserDetailsService.loadUserByUsername(username);
             if (jwtUtil.validateToken(jwt, userDetails)) {
@@ -100,6 +108,32 @@ public class AuthController extends BaseController<Object> {
             throw new AppException(e.getMessage());
         }
     }
+
+    @GetMapping("/check")
+    public ResponseEntity<?>  checker(@RequestBody @Valid RequestTest202008 request) {
+        System.out.println("request =*********************** " + request);
+        System.out.println("==========================1");
+        String username = null;
+        Map<String, Object> map = new HashMap<>();
+//        try {
+            JwtUtil jwtTokenUtil = null;
+            username = String.valueOf(jwtTokenUtil.hashCode());
+//            System.out.println("==========================" + username);
+//        } catch (IllegalArgumentException e) {
+//            log.warn("Unable to get JWT Token");
+//        } catch (ExpiredJwtException e) {}
+//        if (username != null) {
+//            map.put("success", true);
+//            map.put("username", username);
+//        } else {
+//            map.put("success", false);
+//        }
+            map.put("success", true);
+            map.put("username", username);
+
+        return this.resSuccess(map);
+    }
+
 
     @DeleteMapping("/password")
     public ResponseEntity<?> resetPassword(@RequestBody @Valid UserResetPasswordDTO userResetPasswordDTO, HttpServletRequest request) {
