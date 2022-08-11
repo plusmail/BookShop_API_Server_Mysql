@@ -33,8 +33,8 @@ public class Category {
     @Column(nullable = false)
     private String name;
 
-    @Nationalized
-    @Length(max = 100000)
+    @Lob
+    @Column(length = 100000)
     private String description;
 
     @Column(nullable = false)

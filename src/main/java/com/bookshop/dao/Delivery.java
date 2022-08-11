@@ -11,6 +11,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -25,7 +26,7 @@ public class Delivery {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String index;
+    private String indexId;
 
     @Nationalized
     @Column(nullable = false)
@@ -36,8 +37,8 @@ public class Delivery {
     private List<SaleOrder> saleOrders;
 
     @CreationTimestamp
-    private Timestamp createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @UpdateTimestamp
-    private Timestamp updatedAt;
+    private LocalDateTime updatedAt = LocalDateTime.now();
 }

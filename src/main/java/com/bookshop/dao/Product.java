@@ -34,7 +34,7 @@ public class Product {
     @Nationalized
     private String shortDescription;
 
-    @Nationalized
+    @Lob
     @Column(nullable = false)
     @Length(max = 100000)
     private String longDescription;

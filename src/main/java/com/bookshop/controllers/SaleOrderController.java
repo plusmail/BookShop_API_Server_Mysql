@@ -60,7 +60,7 @@ public class SaleOrderController extends BaseController<SaleOrder> {
         specification.add(new SearchCriteria("user", requestedUser.getId(), SearchOperation.EQUAL));
 
         if (deliveryIndex != null) {
-            Delivery deliverySearch = deliveryService.findByIndex(deliveryIndex);
+            Delivery deliverySearch = deliveryService.findByIndexId(deliveryIndex);
             if (deliverySearch != null) {
                 specification.add(new SearchCriteria("delivery", deliverySearch.getId(), SearchOperation.EQUAL));
             }
@@ -153,7 +153,7 @@ public class SaleOrderController extends BaseController<SaleOrder> {
         saleOrder.setDelivery(delivery);
         SaleOrder savedSaleOrder = saleOrderService.update(saleOrder);
 
-        if (delivery.getIndex().equals(Common.DELIVERY_CANCELED_INDEX)) {
+        if (delivery.getIndexId().equals(Common.DELIVERY_CANCELED_INDEX)) {
             List<OrderItem> orderItems = saleOrder.getOrderItems();
 
             for (OrderItem orderItem : orderItems) {

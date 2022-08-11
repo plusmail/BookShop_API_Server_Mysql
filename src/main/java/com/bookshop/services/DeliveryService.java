@@ -9,7 +9,7 @@ public interface DeliveryService {
 
     Delivery findById(Long deliveryId);
 
-    Delivery findByIndex(String index);
+    Delivery findByIndexId(String indexId);
 
     Delivery findByAddedToCartState();
 

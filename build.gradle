@@ -26,7 +26,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-mail:2.7.0'
     implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:2.7.0'
     compileOnly 'org.projectlombok:lombok:1.18.24'
-    runtimeOnly 'org.postgresql:postgresql:42.3.6'
+//    runtimeOnly 'org.postgresql:postgresql:42.3.6'
+    implementation 'mysql:mysql-connector-java'
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
     // https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt
     implementation group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'

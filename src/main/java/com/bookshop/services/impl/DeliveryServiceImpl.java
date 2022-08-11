@@ -28,28 +28,28 @@ public class DeliveryServiceImpl implements DeliveryService {
     }
 
     @Override
-    public Delivery findByIndex(String index) {
-        return deliveryRepository.findByIndex(index);
+    public Delivery findByIndexId(String indexId) {
+        return deliveryRepository.findByIndexId(indexId);
     }
 
     @Override
     public Delivery findByAddedToCartState() {
-        return this.findByIndex(Common.DELIVERY_ADDED_TO_CART_INDEX);
+        return this.findByIndexId(Common.DELIVERY_ADDED_TO_CART_INDEX);
     }
 
     @Override
     public Delivery findByWaitingToConfirmState() {
-        return this.findByIndex(Common.DELIVERY_WAITING_TO_CONFIRM_INDEX);
+        return this.findByIndexId(Common.DELIVERY_WAITING_TO_CONFIRM_INDEX);
     }
 
     @Override
     public Delivery findByDeliveredState() {
-        return this.findByIndex(Common.DELIVERY_DELIVERED_INDEX);
+        return this.findByIndexId(Common.DELIVERY_DELIVERED_INDEX);
     }
 
     @Override
     public Delivery findByCancelState() {
-        return this.findByIndex(Common.DELIVERY_CANCELED_INDEX);
+        return this.findByIndexId(Common.DELIVERY_CANCELED_INDEX);
     }
 
     @Override
