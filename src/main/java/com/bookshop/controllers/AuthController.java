@@ -17,6 +17,9 @@ import com.bookshop.utils.RequestTest202008;
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.ReactiveRedisOperations;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -32,11 +35,13 @@ import javax.mail.MessagingException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.security.AuthProvider;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -45,6 +50,8 @@ public class AuthController extends BaseController<Object> {
     @Autowired
     private JwtUtil jwtUtil;
 
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
     @Autowired
     private MyUserDetailsService myUserDetailsService;
 
@@ -64,7 +71,9 @@ public class AuthController extends BaseController<Object> {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthenticationRequest authenticationRequest) {
+    public ResponseEntity<?> login(@RequestHeader Map<String, Object> requestHeader, @RequestBody AuthenticationRequest authenticationRequest) {
+        System.out.println("get header name ================" +requestHeader.toString());
+        System.out.println("request =*********************** " + requestHeader.get("cookie"));
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                     authenticationRequest.getUsername(), authenticationRequest.getPassword()));
@@ -75,6 +84,34 @@ public class AuthController extends BaseController<Object> {
         final String jwt = jwtUtil.generateToken(userDetails);
         User user = userService.findByUsername(authenticationRequest.getUsername());
         return this.resSuccess(new AuthenticationResponse(jwt, user));
+    }
+
+    @DeleteMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestBody Map<String, String> m) {
+        String username = null;
+        String accessToken = m.get("accessToken");
+        try {
+            username = jwtUtil.extractUsername(accessToken);
+        } catch (IllegalArgumentException e) {} catch (ExpiredJwtException e) { //expire됐을 때
+            username = e.getClaims().getSubject();
+            log.info("username from expired access token: " + username);
+        }
+
+        try {
+            if (redisTemplate.opsForValue().get(username) != null) {
+                //delete refresh token
+                redisTemplate.delete(username);
+            }
+        } catch (IllegalArgumentException e) {
+            log.warn("user does not exist");
+        }
+
+        //cache logout token for 10 minutes!
+        log.info(" logout ing : " + accessToken);
+        redisTemplate.opsForValue().set(accessToken, true);
+        redisTemplate.expire(accessToken, 10*6*1000, TimeUnit.MILLISECONDS);
+
+        return new ResponseEntity(HttpStatus.OK);
     }
 
     @PostMapping("/signup")
@@ -109,31 +146,33 @@ public class AuthController extends BaseController<Object> {
         }
     }
 
-    @GetMapping("/check")
-    public ResponseEntity<?>  checker(@RequestBody @Valid RequestTest202008 request) {
-        System.out.println("request =*********************** " + request);
-        System.out.println("==========================1");
+    @PostMapping("/check")
+    public Map<String, Object> checker(@RequestHeader Map<String, Object> requestHeader, @RequestBody Map<String, String> m) {
+
         String username = null;
+        String accessToken = m.get("accessToken");
+
         Map<String, Object> map = new HashMap<>();
-//        try {
-            JwtUtil jwtTokenUtil = null;
-            username = String.valueOf(jwtTokenUtil.hashCode());
-//            System.out.println("==========================" + username);
-//        } catch (IllegalArgumentException e) {
-//            log.warn("Unable to get JWT Token");
-//        } catch (ExpiredJwtException e) {}
-//        if (username != null) {
-//            map.put("success", true);
-//            map.put("username", username);
-//        } else {
-//            map.put("success", false);
-//        }
-            map.put("success", true);
+        System.out.println("check =***********************1 " + m);
+        try {
+            System.out.println("check =***********************2 " + m.get("accessToken"));
+            username = jwtUtil.extractUsername(m.get("accessToken"));
+            System.out.println("check =***********************3 " + username);
+        } catch (IllegalArgumentException e) {
+            log.warn("Unable to get JWT Token");
+        } catch (ExpiredJwtException e) {}
+        if (username != null) {
+            map.put("meta", true);
+            map.put("_id", true);
             map.put("username", username);
 
-        return this.resSuccess(map);
-    }
+        } else {
+            map.put("success", false);
+        }
+        System.out.println("check =*********************** " + map);
 
+        return map;
+    }
 
     @DeleteMapping("/password")
     public ResponseEntity<?> resetPassword(@RequestBody @Valid UserResetPasswordDTO userResetPasswordDTO, HttpServletRequest request) {

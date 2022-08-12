@@ -41,6 +41,7 @@ dependencies {
     implementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
     // https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-ui
     implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.6.1'
+    implementation group: 'org.springframework.boot', name: 'spring-boot-starter-data-redis', version: '2.4.10'
 }
 
 test {
