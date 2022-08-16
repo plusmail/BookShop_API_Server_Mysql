@@ -12,10 +12,12 @@ import com.bookshop.models.AuthenticationResponse;
 import com.bookshop.services.MailService;
 import com.bookshop.services.MyUserDetailsService;
 import com.bookshop.services.UserService;
+import com.bookshop.utils.AuthorizationExtractor;
 import com.bookshop.utils.JwtUtil;
 import com.bookshop.utils.RequestTest202008;
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -32,6 +34,7 @@ import org.thymeleaf.context.Context;
 import org.thymeleaf.spring5.SpringTemplateEngine;
 
 import javax.mail.MessagingException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
@@ -70,6 +73,8 @@ public class AuthController extends BaseController<Object> {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    private AuthorizationExtractor authExtractor;
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestHeader Map<String, Object> requestHeader, @RequestBody AuthenticationRequest authenticationRequest) {
         System.out.println("get header name ================" +requestHeader.toString());
@@ -87,11 +92,21 @@ public class AuthController extends BaseController<Object> {
     }
 
     @DeleteMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody Map<String, String> m) {
+    public ResponseEntity<Void> logout(@RequestHeader Map<String, Object> requestHeader, @CookieValue(value="access_token") Cookie access_token, @RequestBody AuthenticationResponse authenticationResponse) {
+        System.out.println("logout =*********************** " + requestHeader.get("host"));
+        System.out.println("logout =*********************** " + requestHeader.get("content-type"));
+        System.out.println("logout =*********************** " + requestHeader.get("user-agent"));
+        System.out.println("logout =*********************** " + requestHeader.get("accept-encoding"));
+        System.out.println("logout =***********************access_token " + access_token.getValue());
+
         String username = null;
-        String accessToken = m.get("accessToken");
+        String jwt = access_token.getValue();
+        System.out.println("jwt:" + jwt);
+
         try {
-            username = jwtUtil.extractUsername(accessToken);
+            username = jwtUtil.extractUsername(access_token.getValue());
+            System.out.println("logout username ================" +username);
+
         } catch (IllegalArgumentException e) {} catch (ExpiredJwtException e) { //expire됐을 때
             username = e.getClaims().getSubject();
             log.info("username from expired access token: " + username);
@@ -107,9 +122,9 @@ public class AuthController extends BaseController<Object> {
         }
 
         //cache logout token for 10 minutes!
-        log.info(" logout ing : " + accessToken);
-        redisTemplate.opsForValue().set(accessToken, true);
-        redisTemplate.expire(accessToken, 10*6*1000, TimeUnit.MILLISECONDS);
+        log.info(" logout ing : " + jwt);
+        redisTemplate.opsForValue().set(jwt, true);
+        redisTemplate.expire(jwt, 10*6*1000, TimeUnit.MILLISECONDS);
 
         return new ResponseEntity(HttpStatus.OK);
     }
@@ -151,6 +166,7 @@ public class AuthController extends BaseController<Object> {
 
         String username = null;
         String accessToken = m.get("accessToken");
+        User user = userService.findByUsername(m.get("username"));
 
         Map<String, Object> map = new HashMap<>();
         System.out.println("check =***********************1 " + m);
@@ -162,8 +178,8 @@ public class AuthController extends BaseController<Object> {
             log.warn("Unable to get JWT Token");
         } catch (ExpiredJwtException e) {}
         if (username != null) {
-            map.put("meta", true);
-            map.put("_id", true);
+            map.put("_id", user.getId());
+            map.put("accessToken", accessToken);
             map.put("username", username);
 
         } else {

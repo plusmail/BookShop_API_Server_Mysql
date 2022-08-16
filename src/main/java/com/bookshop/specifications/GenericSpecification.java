@@ -13,7 +13,7 @@ import java.util.*;
 
 public class GenericSpecification<T> implements Specification<T> {
 
-    private List<SearchCriteria> listSearchCriteria;
+    private final List<SearchCriteria> listSearchCriteria;
     private JoinCriteria joinCriteria;
     private Sort sort = Sort.by("createdAt").descending();
 
